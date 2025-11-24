@@ -1,0 +1,29 @@
+# Godot-specific
+.godot/
+.import/
+mono/
+.mono/
+export/
+# Godot build caches inside project
+**/.godot/
+**/.import/
+
+# OS junk
+.DS_Store
+Thumbs.db
+
+# IDE/editor
+.idea/
+*.iml
+.vscode/
+*.swp
+*.swo
+
+# Logs
+logs/
+*.log
+
+# Exported builds
+bin/
+build/
+release/

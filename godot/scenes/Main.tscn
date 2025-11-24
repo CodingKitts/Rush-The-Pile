@@ -1,0 +1,76 @@
+[gd_scene load_steps=5 format=3 uid="uid://bsve6aybsqsiu"]
+
+[ext_resource type="Script" uid="uid://bkf7c8nx4jejt" path="res://scripts/Game.gd" id="1_y8vti"]
+[ext_resource type="Script" uid="uid://cbnjsvvwscb41" path="res://scripts/UIMessage.gd" id="2_msg"]
+[ext_resource type="Script" uid="uid://cfgfqlhwy6uu2" path="res://scripts/AudioManager.gd" id="3_audio"]
+
+[sub_resource type="CircleShape2D" id="1"]
+radius = 110.0
+
+[node name="Main" type="Node2D"]
+script = ExtResource("1_y8vti")
+
+[node name="UI" type="CanvasLayer" parent="."]
+
+[node name="Message" type="Label" parent="UI"]
+anchors_preset = 5
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = -300.0
+offset_top = 10.0
+offset_right = 300.0
+offset_bottom = 60.0
+horizontal_alignment = 1
+script = ExtResource("2_msg")
+
+[node name="TapButton" type="Button" parent="UI"]
+anchors_preset = 7
+anchor_left = 0.5
+anchor_top = 1.0
+anchor_right = 0.5
+anchor_bottom = 1.0
+offset_left = -80.0
+offset_top = -160.0
+offset_right = 80.0
+offset_bottom = -110.0
+text = "TAP"
+
+[node name="LeaveButton" type="Button" parent="UI"]
+anchors_preset = 1
+anchor_left = 1.0
+anchor_right = 1.0
+offset_left = -120.0
+offset_top = 10.0
+offset_right = -10.0
+offset_bottom = 45.0
+text = "Leave Match"
+
+[node name="Audio" type="Node" parent="."]
+script = ExtResource("3_audio")
+
+[node name="CenterPileArea" type="Area2D" parent="."]
+position = Vector2(640, 360)
+
+[node name="CenterCollision" type="CollisionShape2D" parent="CenterPileArea"]
+shape = SubResource("1")
+
+[node name="CenterLabel" type="Label" parent="."]
+offset_left = 600.0
+offset_top = 330.0
+offset_right = 600.0
+offset_bottom = 330.0
+text = "Center"
+
+[node name="PlayerAreas" type="Node2D" parent="."]
+
+[node name="Player0Area" type="Area2D" parent="PlayerAreas"]
+position = Vector2(640, 660)
+
+[node name="Player1Area" type="Area2D" parent="PlayerAreas"]
+position = Vector2(1140, 360)
+
+[node name="Player2Area" type="Area2D" parent="PlayerAreas"]
+position = Vector2(640, 60)
+
+[node name="Player3Area" type="Area2D" parent="PlayerAreas"]
+position = Vector2(140, 360)

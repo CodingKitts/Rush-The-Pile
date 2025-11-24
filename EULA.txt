@@ -1,0 +1,61 @@
+Rush The Pile — End User License Agreement (EULA)
+
+IMPORTANT: PLEASE READ THIS LICENSE CAREFULLY BEFORE INSTALLING OR USING THE GAME. BY INSTALLING, COPYING, OR USING THE GAME, YOU AGREE TO BE BOUND BY THE TERMS OF THIS EULA. IF YOU DO NOT AGREE, DO NOT INSTALL OR USE THE GAME.
+
+1. Definitions
+- "Game" means the software titled "Rush The Pile", including executable programs, game code in compiled/binary form, data files, artwork, graphics, audio, music, fonts, text, and other content distributed with it, as well as any updates, patches, or DLC provided by the Licensor.
+- "Licensor" means the rightsholder(s) of the Game.
+- "You" or "End User" means the person who acquires a license to use the Game.
+- "Platform" means the distribution service through which You obtained the Game (e.g., Steam).
+
+2. License Grant
+Subject to Your compliance with this EULA and the Platform’s terms, Licensor grants You a personal, limited, revocable, non-exclusive, non-transferable, non-sublicensable license to download, install, and use one copy of the Game for Your personal, non-commercial entertainment on devices You own or control.
+
+3. Restrictions
+You may not:
+- Copy, distribute, publicly display, publicly perform, sell, rent, lease, sublicense, or otherwise transfer the Game or any copy thereof, except as expressly permitted by this EULA or the Platform.
+- Reverse engineer, decompile, disassemble, or attempt to derive the source code of the Game, except to the extent any such restriction is prohibited by applicable law.
+- Circumvent or attempt to circumvent any technical protection or security measures of the Game or Platform.
+- Use the Game in any manner that is unlawful, infringes third-party rights, or violates this EULA or the Platform’s terms.
+- Use any trademarks, logos, or branding associated with the Game, except as expressly authorized in writing by Licensor.
+
+4. Ownership
+The Game is licensed, not sold. Licensor and its licensors own and retain all right, title, and interest in and to the Game and all copies thereof, including all intellectual property and proprietary rights. No rights are granted to You other than those expressly set forth in this EULA.
+
+5. User-Generated Content (UGC)
+If the Game permits You to create, upload, or share content, You are solely responsible for such content and must ensure it complies with applicable laws and this EULA. Licensor may, but is not obligated to, moderate such content.
+
+6. Updates and Changes
+Licensor may provide updates, patches, or modifications to the Game that must be installed for You to continue using the Game. Licensor may modify or discontinue any part of the Game at any time.
+
+7. Online Services
+If the Game uses online features or services, those features may be subject to additional terms and may be modified or discontinued by Licensor at any time.
+
+8. Termination
+This EULA is effective until terminated. It will terminate automatically without notice if You breach any term of this EULA. Upon termination, You must stop using the Game and delete all copies. Sections intended to survive termination (including, without limitation, Sections 3, 4, 10, and 11) shall survive.
+
+9. Health and Safety
+Some individuals may experience discomfort or other adverse effects due to video games. Use the Game at Your own risk and follow all health and safety guidance provided by the Platform and device manufacturers.
+
+10. Disclaimer of Warranties
+TO THE MAXIMUM EXTENT PERMITTED BY APPLICABLE LAW, THE GAME IS PROVIDED "AS IS" AND "AS AVAILABLE" WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING, WITHOUT LIMITATION, WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, TITLE, AND NON-INFRINGEMENT.
+
+11. Limitation of Liability
+TO THE MAXIMUM EXTENT PERMITTED BY APPLICABLE LAW, IN NO EVENT SHALL LICENSOR OR ITS LICENSORS BE LIABLE FOR ANY INDIRECT, INCIDENTAL, SPECIAL, CONSEQUENTIAL, EXEMPLARY, OR PUNITIVE DAMAGES, OR ANY LOSS OF PROFITS OR REVENUES, ARISING OUT OF OR IN CONNECTION WITH THE GAME OR THIS EULA, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGES. LICENSOR’S TOTAL LIABILITY SHALL NOT EXCEED THE AMOUNT YOU PAID (IF ANY) TO ACQUIRE THE GAME.
+
+12. Governing Law and Venue
+This EULA shall be governed by and construed in accordance with the laws of the Licensor’s principal place of business or, if required by the Platform, the jurisdiction stated in the Platform’s terms. You consent to the exclusive jurisdiction and venue of the courts located in such jurisdiction for any disputes arising out of this EULA or the Game.
+
+13. Third-Party Software and Services
+The Game may include or interoperate with third-party software, libraries, or services that are subject to separate terms. Such terms apply to the respective components. Acknowledgements and notices, if any, are provided within the Game or documentation.
+
+14. Export Compliance
+You agree to comply with all applicable export control and sanctions laws and regulations in connection with the Game.
+
+15. Changes to this EULA
+Licensor may update this EULA from time to time. If You continue to use the Game after an update becomes effective, You are deemed to have accepted the updated EULA.
+
+16. Contact
+If you have any questions about this EULA or the Game, please contact the publisher through the Platform’s support channels.
+
+By installing or using the Game, You acknowledge that You have read, understood, and agree to be bound by this EULA.

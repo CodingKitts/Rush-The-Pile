@@ -1,0 +1,105 @@
+[gd_scene load_steps=2 format=3 uid="uid://dm0o5lhru6vha"]
+
+[ext_resource type="Script" uid="uid://sbjcy38syv8q" path="res://scripts/Menu.gd" id="1_abcde"]
+
+[node name="Menu" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_abcde")
+
+[node name="Center" type="CenterContainer" parent="."]
+layout_mode = 0
+anchor_left = 0.25
+anchor_top = 0.25
+anchor_right = 0.75
+anchor_bottom = 0.75
+
+[node name="VBox" type="VBoxContainer" parent="Center"]
+custom_minimum_size = Vector2(300, 200)
+layout_mode = 2
+
+[node name="Title" type="Label" parent="Center/VBox"]
+layout_mode = 2
+text = "Rush The Pile"
+horizontal_alignment = 1
+
+[node name="Easy" type="Button" parent="Center/VBox"]
+layout_mode = 2
+text = "Easy"
+
+[node name="Medium" type="Button" parent="Center/VBox"]
+layout_mode = 2
+text = "Medium"
+
+[node name="Hard" type="Button" parent="Center/VBox"]
+layout_mode = 2
+text = "Hard"
+
+[node name="Settings" type="Button" parent="Center/VBox"]
+layout_mode = 2
+text = "Settings"
+
+[node name="Quit" type="Button" parent="Center/VBox"]
+layout_mode = 2
+text = "Quit"
+
+[node name="SettingsPanel" type="Panel" parent="."]
+visible = false
+layout_mode = 1
+anchors_preset = -1
+anchor_left = 0.3
+anchor_top = 0.25
+anchor_right = 0.7
+anchor_bottom = 0.75
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="Center" type="CenterContainer" parent="SettingsPanel"]
+layout_mode = 0
+anchor_right = 1.0
+anchor_bottom = 1.0
+
+[node name="VBox" type="VBoxContainer" parent="SettingsPanel/Center"]
+custom_minimum_size = Vector2(200, 120)
+layout_mode = 2
+
+[node name="Title" type="Label" parent="SettingsPanel/Center/VBox"]
+layout_mode = 2
+text = "Settings"
+horizontal_alignment = 1
+
+[node name="MasterHBox" type="HBoxContainer" parent="SettingsPanel/Center/VBox"]
+layout_mode = 2
+
+[node name="MasterLabel" type="Label" parent="SettingsPanel/Center/VBox/MasterHBox"]
+layout_mode = 2
+text = "Master Volume"
+
+[node name="MasterSlider" type="HSlider" parent="SettingsPanel/Center/VBox/MasterHBox"]
+layout_mode = 2
+size_flags_horizontal = 3
+max_value = 1.0
+step = 0.01
+value = 1.0
+
+[node name="SFXHBox" type="HBoxContainer" parent="SettingsPanel/Center/VBox"]
+layout_mode = 2
+
+[node name="SFXLabel" type="Label" parent="SettingsPanel/Center/VBox/SFXHBox"]
+layout_mode = 2
+text = "SFX Volume"
+
+[node name="SFXSlider" type="HSlider" parent="SettingsPanel/Center/VBox/SFXHBox"]
+layout_mode = 2
+size_flags_horizontal = 3
+max_value = 1.0
+step = 0.01
+value = 0.8
+
+[node name="Close" type="Button" parent="SettingsPanel/Center/VBox"]
+layout_mode = 2
+text = "Close"
