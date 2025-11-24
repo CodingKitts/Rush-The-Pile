@@ -13,6 +13,11 @@
 extends Node2D
 
 @export var size: Vector2 = Vector2(64, 24)
+# If true, the detection zone will dynamically scale to the current size of the target block's polygon AABB.
+# The final size will be block_size * scale_factors, clamped by min_size if provided.
+@export var auto_scale_with_block: bool = true
+@export var scale_factor: Vector2 = Vector2(2.0, 1.2)
+@export var min_size: Vector2 = Vector2(32, 16)
 # Make the detection zone translucent by default so the player can see the block through it
 # You can tweak these alphas in the Inspector. "base" is less opaque than "lit" for clarity.
 @export var base_color: Color = Color(0.2, 0.25, 0.35, 0.28)
@@ -41,12 +46,7 @@ func _ready() -> void:
 		_visual.owner = get_tree().edited_scene_root if Engine.is_editor_hint() else null
 	# Build a centered rectangle polygon
 	# Note: In Godot 4, PackedVector2Array expects an Array of Vector2, not varargs
-	_visual.polygon = PackedVector2Array([
-		Vector2(-_half_size.x, -_half_size.y),
-		Vector2(_half_size.x, -_half_size.y),
-		Vector2(_half_size.x, _half_size.y),
-		Vector2(-_half_size.x, _half_size.y)
-	])
+	_update_visual_polygon()
 	_visual.antialiased = true
 	_visual.color = base_color
 	# Ensure draw order keeps the moving block visible above the zone
@@ -90,6 +90,18 @@ func _process(_delta: float) -> void:
 				is_inside = false
 				zone_exited.emit()
 				return
+
+	# Optionally auto-scale the zone to follow the block size
+	# Use a rotation-invariant size so that the zone doesn't grow/shrink as the block rotates while moving.
+	if auto_scale_with_block:
+		var block_size := _get_block_aabb_size_in_local()
+		if block_size.x > 0.0 and block_size.y > 0.0:
+			var desired := Vector2(max(min_size.x, block_size.x * scale_factor.x), max(min_size.y, block_size.y * scale_factor.y))
+			# Avoid excessive churn: only update when meaningfully different (~0.5px)
+			if (desired - size).length_squared() > 0.25:
+				size = desired
+				_half_size = size * 0.5
+				_update_visual_polygon()
 	# Prefer edge-based detection using the actual block polygon's AABB in local space.
 	var inside := _is_overlap_with_block()
 	_visual.color = lit_color if inside else base_color
@@ -156,3 +168,60 @@ func _is_overlap_with_block() -> bool:
 	# Inclusive AABB overlap check (touching counts as inside)
 	var separated := max_v.x < zone_min.x or min_v.x > zone_max.x or max_v.y < zone_min.y or min_v.y > zone_max.y
 	return not separated
+
+# Helper: rotation-invariant visual size of the target block's polygon in this node's local space.
+# Implementation detail:
+# - Get the polygon's bounds in its own local space (no rotation involved).
+# - Convert that size to this node's local space by applying the relative scale
+#   (block.global_scale / self.global_scale), component-wise and absolute.
+func _get_block_aabb_size_in_local() -> Vector2:
+	if _target_block == null:
+		return Vector2.ZERO
+	if _target_polygon == null or not is_instance_valid(_target_polygon):
+		# Try to refresh reference (reuse logic from _is_overlap_with_block)
+		_target_polygon = null
+		for child in _target_block.get_children():
+			if child is Polygon2D:
+				_target_polygon = child
+				break
+		if _target_polygon == null:
+			var candidate := _target_block.get_node_or_null("Block")
+			if candidate is Polygon2D:
+				_target_polygon = candidate
+	if _target_polygon == null:
+		return Vector2.ZERO
+	var poly: PackedVector2Array = _target_polygon.polygon
+	if poly.is_empty():
+		return Vector2.ZERO
+	# Compute local-space bounds (rotation-invariant)
+	var min_local := Vector2.INF
+	var max_local := -Vector2.INF
+	for v in poly:
+		if v.x < min_local.x:
+			min_local.x = v.x
+		if v.y < min_local.y:
+			min_local.y = v.y
+		if v.x > max_local.x:
+			max_local.x = v.x
+		if v.y > max_local.y:
+			max_local.y = v.y
+	var local_size := Vector2(max(0.0, max_local.x - min_local.x), max(0.0, max_local.y - min_local.y))
+
+	# Convert to this node's local space using relative scale, ignore rotation.
+	var block_scale := _target_polygon.global_scale.abs()
+	var self_scale := self.global_scale.abs()
+	# Prevent division by zero
+	self_scale.x = 1.0 if self_scale.x == 0.0 else self_scale.x
+	self_scale.y = 1.0 if self_scale.y == 0.0 else self_scale.y
+	var scale_ratio := Vector2(block_scale.x / self_scale.x, block_scale.y / self_scale.y)
+	return Vector2(local_size.x * scale_ratio.x, local_size.y * scale_ratio.y)
+
+func _update_visual_polygon() -> void:
+	if _visual == null:
+		return
+	_visual.polygon = PackedVector2Array([
+		Vector2(-_half_size.x, -_half_size.y),
+		Vector2(_half_size.x, -_half_size.y),
+		Vector2(_half_size.x, _half_size.y),
+		Vector2(-_half_size.x, _half_size.y)
+	])

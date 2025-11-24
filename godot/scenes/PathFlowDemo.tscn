@@ -41,11 +41,11 @@ script = ExtResource("1")
 [node name="Block" type="Polygon2D" parent="World/Path/BlockFollow"]
 color = Color(0.247059, 0.760784, 0.278431, 1)
 antialiased = true
-polygon = PackedVector2Array(-16, -10, 16, -10, 16, 10, -16, 10)
+polygon = PackedVector2Array(-24, -15, 24, -15, 24, 15, -24, 15)
 
 [node name="FlowArrow" type="Line2D" parent="World/Path/BlockFollow"]
-points = PackedVector2Array(0, 0, 22, 0, 16, -6, 22, 0, 16, 6)
-width = 3.0
+points = PackedVector2Array(0, 0, 33, 0, 24, -9, 33, 0, 24, 9)
+width = 5.0
 default_color = Color(1, 0.847059, 0, 1)
 
 [node name="DetectionBlock" type="Node2D" parent="World/Path"]
@@ -170,15 +170,20 @@ text = "↓"
 anchors_preset = 5
 anchor_left = 0.5
 anchor_right = 0.5
-offset_left = -80.0
+offset_left = -160.0
 offset_top = 8.0
-offset_right = 80.0
-offset_bottom = 36.0
+offset_right = 160.0
+offset_bottom = 80.0
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
+theme_override_constants/outline_size = 2
+theme_override_font_sizes/font_size = 42
 text = "Attempts: 5"
 horizontal_alignment = 1
 vertical_alignment = 1
 
 [node name="PathDebug" type="Label" parent="UI"]
+visible = false
 offset_left = 8.0
 offset_top = 8.0
 offset_right = 208.0
@@ -188,14 +193,17 @@ script = ExtResource("3")
 path_node = NodePath("../World/Path")
 
 [node name="QuitButton" type="Button" parent="UI"]
-anchors_preset = 1
-anchor_left = 1.0
-anchor_right = 1.0
-offset_left = -96.0
+anchors_preset = -1
+anchor_left = 0.84
+anchor_top = 0.02
+anchor_right = 0.995
+anchor_bottom = 0.1
+offset_left = 8.0
 offset_top = 8.0
 offset_right = -8.0
-offset_bottom = 40.0
+offset_bottom = -8.0
 focus_mode = 0
+theme_override_font_sizes/font_size = 42
 text = "Quit"
 
 [connection signal="pressed" from="UI/UIRoot/SpeedControls/IncreaseSpeedButton" to="World/Path/BlockFollow" method="increase_speed"]
