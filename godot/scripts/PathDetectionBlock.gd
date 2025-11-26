@@ -15,7 +15,7 @@ extends Node2D
 @export var size: Vector2 = Vector2(64, 24)
 # If true, the detection zone will dynamically scale to the current size of the target block's polygon AABB.
 # The final size will be block_size * scale_factors, clamped by min_size if provided.
-@export var auto_scale_with_block: bool = true
+@export var auto_scale_with_block: bool = false
 @export var scale_factor: Vector2 = Vector2(2.0, 1.2)
 @export var min_size: Vector2 = Vector2(32, 16)
 # Make the detection zone translucent by default so the player can see the block through it
@@ -69,13 +69,15 @@ func _place_at_bottom_center(path: Path2D) -> void:
 	var min_x := pts[0].x
 	var max_x := pts[0].x
 	var max_y := pts[0].y
-	for p in pts:
-		if p.x < min_x:
-			min_x = p.x
-		if p.x > max_x:
-			max_x = p.x
-		if p.y > max_y:
-			max_y = p.y
+	for i in range(pts.size()):
+		var px := pts[i].x
+		var py := pts[i].y
+		if px < min_x:
+			min_x = px
+		if px > max_x:
+			max_x = px
+		if py > max_y:
+			max_y = py
 	# Bottom-center of the path's bounding box
 	position = Vector2((min_x + max_x) * 0.5, max_y)
 
@@ -148,9 +150,9 @@ func _is_overlap_with_block() -> bool:
 	var gt: Transform2D = _target_polygon.get_global_transform()
 	var min_v := Vector2.INF
 	var max_v := -Vector2.INF
-	for v in poly:
+	for i in range(poly.size()):
 		# In Godot 4, use the * operator to transform a point with Transform2D
-		var world_v: Vector2 = gt * v
+		var world_v: Vector2 = gt * poly[i]
 		var local_v: Vector2 = to_local(world_v)
 		if local_v.x < min_v.x:
 			min_v.x = local_v.x
@@ -196,7 +198,8 @@ func _get_block_aabb_size_in_local() -> Vector2:
 	# Compute local-space bounds (rotation-invariant)
 	var min_local := Vector2.INF
 	var max_local := -Vector2.INF
-	for v in poly:
+	for i in range(poly.size()):
+		var v := poly[i]
 		if v.x < min_local.x:
 			min_local.x = v.x
 		if v.y < min_local.y:

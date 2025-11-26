@@ -50,6 +50,9 @@ default_color = Color(1, 0.847059, 0, 1)
 
 [node name="DetectionBlock" type="Node2D" parent="World/Path"]
 script = ExtResource("4")
+size = Vector2(156, 48)
+base_color = Color(0.2, 0.25, 0.35, 0.45)
+lit_color = Color(0.95, 0.85, 0.2, 0.75)
 
 [node name="CenterPopup" type="Label" parent="World"]
 visible = false
@@ -182,6 +185,18 @@ text = "Attempts: 5"
 horizontal_alignment = 1
 vertical_alignment = 1
 
+[node name="ZoneTimeLabel" type="Label" parent="UI"]
+offset_left = 8.0
+offset_top = 8.0
+offset_right = 360.0
+offset_bottom = 52.0
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
+theme_override_constants/outline_size = 2
+theme_override_font_sizes/font_size = 28
+text = "Zone Time: 0.00s"
+vertical_alignment = 1
+
 [node name="PathDebug" type="Label" parent="UI"]
 visible = false
 offset_left = 8.0
@@ -194,14 +209,14 @@ path_node = NodePath("../World/Path")
 
 [node name="QuitButton" type="Button" parent="UI"]
 anchors_preset = -1
-anchor_left = 0.84
-anchor_top = 0.02
-anchor_right = 0.995
-anchor_bottom = 0.1
-offset_left = 8.0
-offset_top = 8.0
-offset_right = -8.0
-offset_bottom = -8.0
+anchor_left = 0.5
+anchor_top = 1.0
+anchor_right = 0.5
+anchor_bottom = 1.0
+offset_left = -150.0
+offset_top = -104.0
+offset_right = 150.0
+offset_bottom = -48.0
 focus_mode = 0
 theme_override_font_sizes/font_size = 42
 text = "Quit"

@@ -1,7 +1,7 @@
 # PathFlowDemo.gd — Demo-level controller for PathFlowDemo.tscn
 # Responsibilities:
 # - Compute the path center and position a temporary popup label there
-# - When the action is triggered (via Up Arrow UI), if the block is inside the zone, show "Got It!" for 1 second
+# - When the action is triggered (via Up Arrow UI), if the block is inside the zone, show "Got It!" for about 1.5 seconds
 
 extends Node2D
 
@@ -13,10 +13,12 @@ extends Node2D
 @onready var _btn_arrow_up: Button = $UI/UIRoot/DPad/ArrowUpButton
 @onready var _attempts_label: Label = $UI/AttemptsLabel
 @onready var _btn_quit: Button = $UI/QuitButton
+@onready var _zone_time_label: Label = $UI/ZoneTimeLabel
 
-var _hide_timer: SceneTreeTimer
 var _attempts_max: int = 5
 var _attempts_left: int = 5
+var _popup_tween: Tween
+var _zone_time_s: float = 0.0 # Accumulated time the block spends inside the detection zone
 
 func _ready() -> void:
 	# Place the popup at the center of the path's bounds
@@ -44,6 +46,19 @@ func _ready() -> void:
 func _on_quit_pressed() -> void:
 	# Close the application when Quit button is pressed
 	get_tree().quit()
+
+func _process(delta: float) -> void:
+	# Track how long the moving block remains within the detection zone
+	if _detector:
+		var inside := false
+		if _detector.has_method("is_block_inside_now"):
+			inside = _detector.call("is_block_inside_now")
+		else:
+			inside = bool(_detector.get("is_inside"))
+		if inside:
+			_zone_time_s += delta
+	if _zone_time_label:
+		_zone_time_label.text = "Zone Time: %ss" % String.num(_zone_time_s, 2)
 
 func _unhandled_input(event: InputEvent) -> void:
 	# Allow physical keyboard/gamepad input to trigger the same action as the Up Arrow button
@@ -80,15 +95,17 @@ func _position_popup_at_path_center() -> void:
 	var max_x := pts[0].x
 	var min_y := pts[0].y
 	var max_y := pts[0].y
-	for p in pts:
-		if p.x < min_x:
-			min_x = p.x
-		if p.x > max_x:
-			max_x = p.x
-		if p.y < min_y:
-			min_y = p.y
-		if p.y > max_y:
-			max_y = p.y
+	for i in range(pts.size()):
+		var px := pts[i].x
+		var py := pts[i].y
+		if px < min_x:
+			min_x = px
+		if px > max_x:
+			max_x = px
+		if py < min_y:
+			min_y = py
+		if py > max_y:
+			max_y = py
 	var center := Vector2((min_x + max_x) * 0.5, (min_y + max_y) * 0.5)
 	# Center the label on this point
 	var size := _popup_label.size
@@ -98,7 +115,7 @@ func _on_press_button() -> void:
 	# If no attempts left, ignore presses
 	if _attempts_left <= 0:
 		return
-	# If block is inside detection zone when pressed, show popup for 1s
+	# If block is inside detection zone when pressed, show popup for ~1.5s
 	if _detector:
 		var inside := false
 		# Prefer instantaneous geometry check to avoid 1-frame lag at high speeds
@@ -114,13 +131,43 @@ func _on_press_button() -> void:
 			_refresh_attempts_label()
 
 func _show_popup_one_second() -> void:
+	# Update look and feel
 	_popup_label.text = "Got It!"
+	# Make it pop with a friendly green, outlined and larger font if no theme is set in the scene
+	_popup_label.add_theme_color_override("font_color", Color(0.18, 0.9, 0.3))
+	_popup_label.add_theme_color_override("font_outline_color", Color.BLACK)
+	_popup_label.add_theme_constant_override("outline_size", 3)
+	_popup_label.add_theme_font_size_override("font_size", 48)
+
+	# Ensure it scales from its center
+	var size := _popup_label.size
+	_popup_label.pivot_offset = size * 0.5
+
+	# Make sure it's positioned right at the path center (in case the path moved)
+	_position_popup_at_path_center()
+
+	# Prepare for animation
 	_popup_label.visible = true
-	# Always (re)create the timer so the popup actually hides after 1 second
-	# If a previous timer existed, we simply replace it; any old connection will fire once and do no harm
-	_hide_timer = get_tree().create_timer(1.0)
-	_hide_timer.timeout.connect(func():
+	_popup_label.modulate.a = 0.0
+	_popup_label.scale = Vector2(0.85, 0.85)
+
+	# Kill any previous animation to avoid overlapping tweens
+	if _popup_tween:
+		_popup_tween.kill()
+
+	_popup_tween = create_tween()
+	_popup_tween.set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+	# Fade and scale in
+	_popup_tween.parallel().tween_property(_popup_label, "modulate:a", 1.0, 0.12).from(0.0)
+	_popup_tween.parallel().tween_property(_popup_label, "scale", Vector2(1.0, 1.0), 0.16).from(Vector2(0.85, 0.85))
+	# Hold briefly, then fade out (extended by +0.5s)
+	_popup_tween.tween_interval(1.15)
+	_popup_tween.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN)
+	_popup_tween.parallel().tween_property(_popup_label, "modulate:a", 0.0, 0.22)
+	_popup_tween.tween_callback(func():
 		_popup_label.visible = false
+		# Reset scale for the next time
+		_popup_label.scale = Vector2(1, 1)
 	)
 
 ## Remove lingering highlight/focus from a button after mouse/touch press
