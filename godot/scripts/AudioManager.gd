@@ -17,6 +17,8 @@ class_name AudioManager
 ## - vibrate_light()
 ## - vibrate_warning()
 ## Volume control:
+## - set_master_volume_linear(0..1)
+## - get_master_volume_linear()
 ## - set_sfx_volume_linear(0..1)
 ## - get_sfx_volume_linear()
 ## Haptics control:
@@ -28,6 +30,7 @@ var _mix_rate: float = 44100.0
 var _buffer_len: float = 0.25
 
 var _sfx_volume_linear: float = 0.8
+var _master_volume_linear_default: float = 1.0
 var _haptics_enabled: bool = true
 
 func _ready() -> void:
@@ -55,16 +58,27 @@ func _load_settings() -> void:
 		_haptics_enabled = bool(cfg.get_value("haptics", "enabled", _haptics_enabled))
 	# Apply master volume from settings if present
 	if err == OK and cfg.has_section_key("audio", "master_vol"):
-		var m_lin: float = float(cfg.get_value("audio", "master_vol", 1.0))
+		var m_lin: float = float(cfg.get_value("audio", "master_vol", _master_volume_linear_default))
 		AudioServer.set_bus_volume_db(0, linear_to_db(clamp(m_lin, 0.0, 1.0)))
 
 func _save_settings() -> void:
 	var cfg := ConfigFile.new()
 	cfg.load("user://settings.cfg")
 	cfg.set_value("audio", "sfx_vol", _sfx_volume_linear)
+	# Persist current master volume as well so UI can restore it on next boot
+	cfg.set_value("audio", "master_vol", get_master_volume_linear())
 	cfg.set_value("haptics", "enabled", _haptics_enabled)
 	# Do not overwrite master here; menu handles it
 	cfg.save("user://settings.cfg")
+
+## Master (Music) volume helpers
+func set_master_volume_linear(v: float) -> void:
+	var lin: float = clamp(v, 0.0, 1.0)
+	AudioServer.set_bus_volume_db(0, linear_to_db(lin))
+	_save_settings()
+
+func get_master_volume_linear() -> float:
+	return db_to_linear(AudioServer.get_bus_volume_db(0))
 
 # Utility to spawn a generator player and push frames
 # gen_fn should return either:

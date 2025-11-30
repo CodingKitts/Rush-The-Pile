@@ -1,7 +1,7 @@
-# PathFlowDemo.gd — Demo-level controller for PathFlowDemo.tscn
-# Responsibilities:
-# - Compute the path center and position a temporary popup label there
-# - When the action is triggered (via Up Arrow UI), if the block is inside the zone, show "Got It!" for about 1.5 seconds
+## PathFlowDemo.gd — Demo-level controller for PathFlowDemo.tscn
+## Responsibilities:
+## - Compute the path center and position a temporary popup label there
+## - When the action is triggered (via Up Arrow UI), if the block is inside the zone, show "Got It!" for about 1.5 seconds
 
 extends Node2D
 
@@ -13,12 +13,19 @@ extends Node2D
 @onready var _btn_arrow_up: Button = $UI/UIRoot/DPad/ArrowUpButton
 @onready var _attempts_label: Label = $UI/AttemptsLabel
 @onready var _btn_quit: Button = $UI/QuitButton
-@onready var _zone_time_label: Label = $UI/ZoneTimeLabel
+@onready var _btn_pause: Button = $UI/UIRoot/PauseButton
+@onready var _pause_overlay: Control = $UI/PauseOverlay
+@onready var _resume_button: Button = $UI/PauseOverlay/Panel/VBox/ResumeButton
+@onready var _countdown_label: Label = $UI/PauseOverlay/CountdownLabel
+@onready var _pause_panel: Panel = $UI/PauseOverlay/Panel
+@onready var _pause_dim: ColorRect = $UI/PauseOverlay/Dim
+@onready var _music_slider: HSlider = $UI/PauseOverlay/Panel/VBox/MusicRow/MusicSlider
+@onready var _sfx_slider: HSlider = $UI/PauseOverlay/Panel/VBox/SfxRow/SfxSlider
+@onready var _audio: AudioManager = $Audio
 
 var _attempts_max: int = 5
 var _attempts_left: int = 5
 var _popup_tween: Tween
-var _zone_time_s: float = 0.0 # Accumulated time the block spends inside the detection zone
 
 func _ready() -> void:
 	# Place the popup at the center of the path's bounds
@@ -37,6 +44,31 @@ func _ready() -> void:
 	_disable_button_focus_and_cleanup(_btn_speed_down)
 	_disable_button_focus_and_cleanup(_btn_arrow_up)
 	_disable_button_focus_and_cleanup(_btn_quit)
+	_disable_button_focus_and_cleanup(_btn_pause)
+	_disable_button_focus_and_cleanup(_resume_button)
+
+	# Ensure the pause overlay and its controls work while the tree is paused
+	# so the Resume button can be pressed to unpause.
+	if _pause_overlay:
+		_pause_overlay.process_mode = Node.PROCESS_MODE_WHEN_PAUSED
+	if _resume_button:
+		_resume_button.process_mode = Node.PROCESS_MODE_WHEN_PAUSED
+	if _countdown_label:
+		_countdown_label.process_mode = Node.PROCESS_MODE_WHEN_PAUSED
+
+	# Hook up Pause/Resume and volume sliders
+	if _btn_pause:
+		_btn_pause.pressed.connect(_on_pause_pressed)
+	if _resume_button:
+		_resume_button.pressed.connect(_on_resume_pressed)
+	# Initialize slider values from AudioManager if available
+	if _audio:
+		if _music_slider:
+			_music_slider.value = _audio.get_master_volume_linear()
+			_music_slider.value_changed.connect(_on_music_changed)
+		if _sfx_slider:
+			_sfx_slider.value = _audio.get_sfx_volume_linear()
+			_sfx_slider.value_changed.connect(_on_sfx_changed)
 
 	# Recalculate if the curve changes at edit/runtime
 	if _path and _path.curve:
@@ -47,22 +79,18 @@ func _on_quit_pressed() -> void:
 	# Close the application when Quit button is pressed
 	get_tree().quit()
 
-func _process(delta: float) -> void:
-	# Track how long the moving block remains within the detection zone
-	if _detector:
-		var inside := false
-		if _detector.has_method("is_block_inside_now"):
-			inside = _detector.call("is_block_inside_now")
-		else:
-			inside = bool(_detector.get("is_inside"))
-		if inside:
-			_zone_time_s += delta
-	if _zone_time_label:
-		_zone_time_label.text = "Zone Time: %ss" % String.num(_zone_time_s, 2)
 
 func _unhandled_input(event: InputEvent) -> void:
 	# Allow physical keyboard/gamepad input to trigger the same action as the Up Arrow button
 	if _attempts_left <= 0:
+		return
+	# Allow ESC/BACK to toggle pause/resume
+	if event.is_action_pressed("ui_cancel") and not event.is_echo():
+		if get_tree().paused:
+			_on_resume_pressed()
+		else:
+			_on_pause_pressed()
+		get_viewport().set_input_as_handled()
 		return
 	if event is InputEventKey and event.pressed and not event.echo:
 		# Keyboard Up Arrow
@@ -106,10 +134,12 @@ func _position_popup_at_path_center() -> void:
 			min_y = py
 		if py > max_y:
 			max_y = py
-	var center := Vector2((min_x + max_x) * 0.5, (min_y + max_y) * 0.5)
+	var center_local := Vector2((min_x + max_x) * 0.5, (min_y + max_y) * 0.5)
+	# Convert from Path2D local to canvas/global space so Control aligns visually with the path
+	var center_world := _path.to_global(center_local)
 	# Center the label on this point
 	var size := _popup_label.size
-	_popup_label.position = center - size * 0.5
+	_popup_label.position = center_world - size * 0.5
 
 func _on_press_button() -> void:
 	# If no attempts left, ignore presses
@@ -126,7 +156,8 @@ func _on_press_button() -> void:
 		if inside:
 			_show_popup_one_second()
 		else:
-			# Missed the zone -> consume an attempt
+			# Missed the zone -> show feedback and consume an attempt
+			_show_miss_popup()
 			_attempts_left = max(0, _attempts_left - 1)
 			_refresh_attempts_label()
 
@@ -169,6 +200,107 @@ func _show_popup_one_second() -> void:
 		# Reset scale for the next time
 		_popup_label.scale = Vector2(1, 1)
 	)
+
+func _show_miss_popup() -> void:
+	# Configure appearance for a miss: red text, outlined, same size for consistency
+	_popup_label.text = "Miss!"
+	_popup_label.add_theme_color_override("font_color", Color(0.95, 0.2, 0.2))
+	_popup_label.add_theme_color_override("font_outline_color", Color.BLACK)
+	_popup_label.add_theme_constant_override("outline_size", 3)
+	_popup_label.add_theme_font_size_override("font_size", 48)
+
+	# Center-based scaling
+	var size := _popup_label.size
+	_popup_label.pivot_offset = size * 0.5
+
+	# Ensure position is still at path center
+	_position_popup_at_path_center()
+
+	# Prepare animation state
+	_popup_label.visible = true
+	_popup_label.modulate.a = 0.0
+	_popup_label.scale = Vector2(0.85, 0.85)
+
+	# Stop any previous tween
+	if _popup_tween:
+		_popup_tween.kill()
+
+	_popup_tween = create_tween()
+	_popup_tween.set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+	# Fade and scale in
+	_popup_tween.parallel().tween_property(_popup_label, "modulate:a", 1.0, 0.10).from(0.0)
+	_popup_tween.parallel().tween_property(_popup_label, "scale", Vector2(1.0, 1.0), 0.14).from(Vector2(0.85, 0.85))
+	# Brief hold, then fade out a bit quicker than success
+	_popup_tween.tween_interval(0.65)
+	_popup_tween.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN)
+	_popup_tween.parallel().tween_property(_popup_label, "modulate:a", 0.0, 0.18)
+	_popup_tween.tween_callback(func():
+		_popup_label.visible = false
+		_popup_label.scale = Vector2(1, 1)
+	)
+
+## Pause/Resume handlers and audio volume wiring
+func _on_pause_pressed() -> void:
+	# Show pause overlay and pause the game
+	if _pause_overlay:
+		_pause_overlay.visible = true
+	# Ensure pause menu elements are visible and countdown is hidden when entering pause
+	if _pause_panel:
+		_pause_panel.visible = true
+	if _pause_dim:
+		_pause_dim.visible = true
+	if _countdown_label:
+		_countdown_label.visible = false
+	get_tree().paused = true
+
+func _on_resume_pressed() -> void:
+	# Begin a 3-second visible countdown, then resume the game
+	if not get_tree().paused:
+		return
+	if _resume_countdown_running:
+		return
+	_start_resume_countdown()
+
+var _resume_countdown_running: bool = false
+
+func _start_resume_countdown() -> void:
+	_resume_countdown_running = true
+	if _resume_button:
+		_resume_button.disabled = true
+	# Hide the pause menu while showing the countdown
+	if _pause_panel:
+		_pause_panel.visible = false
+	if _pause_dim:
+		_pause_dim.visible = false
+	if _countdown_label:
+		_countdown_label.visible = true
+	# Show 3,2,1 with 1 second intervals even while paused
+	for n in [3, 2, 1]:
+		if _countdown_label:
+			_countdown_label.text = str(n)
+		await get_tree().create_timer(1.0, true).timeout
+	# Hide overlay and resume gameplay
+	if _countdown_label:
+		_countdown_label.visible = false
+	if _pause_overlay:
+		_pause_overlay.visible = false
+	get_tree().paused = false
+	if _resume_button:
+		_resume_button.disabled = false
+	# Restore pause menu default visibility for the next pause
+	if _pause_panel:
+		_pause_panel.visible = true
+	if _pause_dim:
+		_pause_dim.visible = true
+	_resume_countdown_running = false
+
+func _on_music_changed(value: float) -> void:
+	if _audio:
+		_audio.set_master_volume_linear(value)
+
+func _on_sfx_changed(value: float) -> void:
+	if _audio:
+		_audio.set_sfx_volume_linear(value)
 
 ## Remove lingering highlight/focus from a button after mouse/touch press
 func _disable_button_focus_and_cleanup(btn: Button) -> void:
