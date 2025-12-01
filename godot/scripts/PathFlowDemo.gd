@@ -16,6 +16,7 @@ extends Node2D
 @onready var _btn_pause: Button = $UI/UIRoot/PauseButton
 @onready var _pause_overlay: Control = $UI/PauseOverlay
 @onready var _resume_button: Button = $UI/PauseOverlay/Panel/VBox/ResumeButton
+@onready var _exit_button: Button = $UI/PauseOverlay/Panel/VBox/ExitButton
 @onready var _countdown_label: Label = $UI/PauseOverlay/CountdownLabel
 @onready var _pause_panel: Panel = $UI/PauseOverlay/Panel
 @onready var _pause_dim: ColorRect = $UI/PauseOverlay/Dim
@@ -58,6 +59,7 @@ func _ready() -> void:
 	_disable_button_focus_and_cleanup(_btn_quit)
 	_disable_button_focus_and_cleanup(_btn_pause)
 	_disable_button_focus_and_cleanup(_resume_button)
+	_disable_button_focus_and_cleanup(_exit_button)
 
 	# Ensure the pause overlay and its controls work while the tree is paused
 	# so the Resume button can be pressed to unpause.
@@ -65,6 +67,8 @@ func _ready() -> void:
 		_pause_overlay.process_mode = Node.PROCESS_MODE_WHEN_PAUSED
 	if _resume_button:
 		_resume_button.process_mode = Node.PROCESS_MODE_WHEN_PAUSED
+	if _exit_button:
+		_exit_button.process_mode = Node.PROCESS_MODE_WHEN_PAUSED
 	if _countdown_label:
 		_countdown_label.process_mode = Node.PROCESS_MODE_WHEN_PAUSED
 
@@ -73,6 +77,8 @@ func _ready() -> void:
 		_btn_pause.pressed.connect(_on_pause_pressed)
 	if _resume_button:
 		_resume_button.pressed.connect(_on_resume_pressed)
+	if _exit_button:
+		_exit_button.pressed.connect(_on_quit_pressed)
 	# Initialize slider values from AudioManager if available
 	if _audio:
 		if _music_slider:

@@ -297,6 +297,13 @@ size_flags_horizontal = 3
 theme_override_font_sizes/font_size = 42
 text = "Resume Game"
 
+[node name="ExitButton" type="Button" parent="UI/PauseOverlay/Panel/VBox"]
+custom_minimum_size = Vector2(0, 56)
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_font_sizes/font_size = 42
+text = "Exit Game"
+
 [node name="AttemptsLabel" type="Label" parent="UI"]
 anchors_preset = 5
 anchor_left = 0.5
