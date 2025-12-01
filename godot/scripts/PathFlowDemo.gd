@@ -8,6 +8,7 @@ extends Node2D
 @onready var _path: Path2D = $World/Path
 @onready var _detector: Node2D = $World/Path/DetectionBlock
 @onready var _popup_label: Label = $World/CenterPopup
+@onready var _block: Node = $World/Path/BlockFollow
 @onready var _btn_speed_up: Button = $UI/UIRoot/SpeedControls/IncreaseSpeedButton
 @onready var _btn_speed_down: Button = $UI/UIRoot/SpeedControls/DecreaseSpeedButton
 @onready var _btn_arrow_up: Button = $UI/UIRoot/DPad/ArrowUpButton
@@ -25,8 +26,7 @@ extends Node2D
 @onready var _audio: AudioManager = $Audio
 @onready var _green_line: ColorRect = $UI/OneThirdLine
 
-# Runtime-added debug label to show last swipe direction
-var _swipe_debug_label: Label
+## Swipe indicator debug label removed per request — popups remain for feedback
 
 # Simple swipe tracking
 var _swipe_active: bool = false
@@ -93,26 +93,7 @@ func _ready() -> void:
 		if not _path.curve.changed.is_connected(_on_curve_changed):
 			_path.curve.changed.connect(_on_curve_changed)
 
-	# Add a small on-screen debug label for swipe direction (bottom center)
-	_swipe_debug_label = Label.new()
-	_swipe_debug_label.name = "SwipeDebugLabel"
-	_swipe_debug_label.text = "Swipe: (none)"
-	_swipe_debug_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	_swipe_debug_label.vertical_alignment = VERTICAL_ALIGNMENT_BOTTOM
-	_swipe_debug_label.add_theme_color_override("font_color", Color(0.85, 0.95, 1.0))
-	_swipe_debug_label.add_theme_color_override("font_outline_color", Color.BLACK)
-	_swipe_debug_label.add_theme_constant_override("outline_size", 2)
-	_swipe_debug_label.add_theme_font_size_override("font_size", 18)
-	# Place within the UI canvas so it remains in screen space
-	var ui := $UI
-	if ui and ui is CanvasLayer:
-		ui.add_child(_swipe_debug_label)
-		# Center bottom margins
-		_swipe_debug_label.position = Vector2(get_viewport_rect().size.x * 0.5 - 60, get_viewport_rect().size.y - 28)
-		# Update position on resize
-		get_viewport().size_changed.connect(func():
-			_swipe_debug_label.position = Vector2(get_viewport_rect().size.x * 0.5 - 60, get_viewport_rect().size.y - 28)
-		)
+	# Swipe debug label removed; using center popups only
 
 func _on_quit_pressed() -> void:
 	# Close the application when Quit button is pressed
@@ -160,6 +141,20 @@ func _input(event: InputEvent) -> void:
 				if _swipe_active and _swipe_start_id == 0:
 					_process_swipe_end(event.position)
 					_reset_swipe()
+			return
+
+	# Right Arrow (keyboard/gamepad) should toggle the moving block direction — same as on-screen Right button
+	if event is InputEventKey and event.pressed and not event.echo:
+		if event.keycode == Key.KEY_RIGHT:
+			if _block and _block.has_method("toggle_direction"):
+				_block.toggle_direction()
+			get_viewport().set_input_as_handled()
+			return
+	elif event is InputEventJoypadButton and event.pressed:
+		if event.button_index == JOY_BUTTON_DPAD_RIGHT:
+			if _block and _block.has_method("toggle_direction"):
+				_block.toggle_direction()
+			get_viewport().set_input_as_handled()
 			return
 
 	# The following actions should respect remaining attempts
@@ -218,10 +213,13 @@ func _process_swipe_end(end_pos: Vector2) -> void:
 			dir_text = "Down"
 		else:
 			dir_text = "Up"
-	# Debug output to console and on-screen
+
+	# Invoke gameplay for swipe-right: same as pressing the Right Arrow button
+	if dir_text == "Right":
+		if _block and _block.has_method("toggle_direction"):
+			_block.toggle_direction()
+	# Debug output to console
 	print("Swipe:", dir_text)
-	if _swipe_debug_label:
-		_swipe_debug_label.text = "Swipe: %s" % dir_text
 
 	# Show the swipe direction in the center of the path for ~1.5 seconds
 	_show_swipe_popup(dir_text)
