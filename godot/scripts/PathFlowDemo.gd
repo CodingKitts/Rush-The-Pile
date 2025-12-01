@@ -217,6 +217,9 @@ func _process_swipe_end(end_pos: Vector2) -> void:
 	if _swipe_debug_label:
 		_swipe_debug_label.text = "Swipe: %s" % dir_text
 
+	# Show the swipe direction in the center of the path for ~1.5 seconds
+	_show_swipe_popup(dir_text)
+
 func _reset_swipe() -> void:
 	_swipe_active = false
 	_swipe_start_pos = Vector2.INF
@@ -253,6 +256,45 @@ func _position_popup_at_path_center() -> void:
 	# Center the label on this point
 	var size := _popup_label.size
 	_popup_label.position = center_world - size * 0.5
+
+## Show a temporary popup at the path center with the given text (used for swipe feedback)
+func _show_swipe_popup(text: String) -> void:
+	# Configure appearance for swipe: bright yellow/white, outlined, consistent size
+	_popup_label.text = text
+	_popup_label.add_theme_color_override("font_color", Color(1.0, 0.95, 0.35))
+	_popup_label.add_theme_color_override("font_outline_color", Color.BLACK)
+	_popup_label.add_theme_constant_override("outline_size", 3)
+	_popup_label.add_theme_font_size_override("font_size", 48)
+
+	# Ensure scaling is from the visual center
+	var size := _popup_label.size
+	_popup_label.pivot_offset = size * 0.5
+
+	# Ensure position is at the path center (in case the path moved)
+	_position_popup_at_path_center()
+
+	# Prepare animation state
+	_popup_label.visible = true
+	_popup_label.modulate.a = 0.0
+	_popup_label.scale = Vector2(0.85, 0.85)
+
+	# Stop any previous tween
+	if _popup_tween:
+		_popup_tween.kill()
+
+	_popup_tween = create_tween()
+	_popup_tween.set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+	# Fade and scale in
+	_popup_tween.parallel().tween_property(_popup_label, "modulate:a", 1.0, 0.12).from(0.0)
+	_popup_tween.parallel().tween_property(_popup_label, "scale", Vector2(1.0, 1.0), 0.16).from(Vector2(0.85, 0.85))
+	# Hold, then fade out so total visible time is about 1.5s
+	_popup_tween.tween_interval(1.15)
+	_popup_tween.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN)
+	_popup_tween.parallel().tween_property(_popup_label, "modulate:a", 0.0, 0.22)
+	_popup_tween.tween_callback(func():
+		_popup_label.visible = false
+		_popup_label.scale = Vector2(1, 1)
+	)
 
 func _on_press_button() -> void:
 	# If no attempts left, ignore presses
