@@ -1,4 +1,4 @@
-[gd_scene load_steps=8 format=3 uid="uid://cx0671axshj8j"]
+[gd_scene load_steps=10 format=3 uid="uid://cx0671axshj8j"]
 
 [ext_resource type="Script" uid="uid://dxu7xuphn7bq5" path="res://scripts/PathBlock.gd" id="1"]
 [ext_resource type="Script" uid="uid://e5d3j66ae3pa" path="res://scripts/PathRenderer.gd" id="2"]
@@ -7,16 +7,41 @@
 [ext_resource type="Script" uid="uid://doqcine8w430o" path="res://scripts/PathFlowDemo.gd" id="5"]
 [ext_resource type="Script" uid="uid://cfgfqlhwy6uu2" path="res://scripts/AudioManager.gd" id="6_audio"]
 
+[sub_resource type="Environment" id="Environment_glow"]
+glow_enabled = true
+glow_levels/2 = 1.0
+glow_levels/4 = 1.0
+glow_levels/5 = 0.0
+glow_strength = 1.1
+glow_hdr_threshold = 0.6
+glow_hdr_scale = 1.0
+
 [sub_resource type="Curve2D" id="Curve2D_0lspu"]
 _data = {
 "points": PackedVector2Array(0, 0, 0, 0, 583.906, 353, 0, 0, 0, 0, 387.604, 361, 0, 0, 0, 0, 287.191, 554, 0, 0, 0, 0, 213.013, 825, 0, 0, 0, 0, 291.714, 1128, 0, 0, 0, 0, 372.225, 1280, 0, 0, 0, 0, 573.05, 1290, 0, 0, 0, 0, 806.442, 1285, 0, 0, 0, 0, 873.382, 1130, 0, 0, 0, 0, 953.894, 817, 0, 0, 0, 0, 874.288, 533, 0, 0, 0, 0, 802.823, 357, 0, 0, 0, 0, 636.374, 353, 0, 0, 0, 0, 583.906, 353)
 }
 point_count = 14
 
+[sub_resource type="ParticleProcessMaterial" id="ParticleProcessMaterial_trail"]
+direction = Vector3(-1, 0, 0)
+spread = 25.0
+initial_velocity_min = 60.0
+initial_velocity_max = 120.0
+angular_velocity_min = -20.0
+angular_velocity_max = 20.0
+gravity = Vector3(0, 0, 0)
+scale_min = 0.35
+scale_max = 0.8
+color = Color(0.247059, 0.760784, 0.278431, 0.9)
+
 [node name="PathFlowDemo" type="Node2D"]
 script = ExtResource("5")
 
+[node name="WorldEnvironment" type="WorldEnvironment" parent="."]
+environment = SubResource("Environment_glow")
+
 [node name="BackgroundLayer" type="CanvasLayer" parent="."]
+layer = -1
 
 [node name="Background" type="ColorRect" parent="BackgroundLayer"]
 anchors_preset = 15
@@ -26,7 +51,7 @@ grow_horizontal = 2
 grow_vertical = 2
 color = Color(0.054902, 0.066667, 0.090196, 1)
 
-[node name="World" type="CanvasLayer" parent="."]
+[node name="World" type="Node2D" parent="."]
 
 [node name="Path" type="Path2D" parent="World"]
 position = Vector2(-95, -75)
@@ -43,6 +68,13 @@ script = ExtResource("1")
 color = Color(0.247059, 0.760784, 0.278431, 1)
 antialiased = true
 polygon = PackedVector2Array(-24, -15, 24, -15, 24, 15, -24, 15)
+
+[node name="Trail" type="GPUParticles2D" parent="World/Path/BlockFollow"]
+amount = 64
+lifetime = 0.5
+preprocess = 0.2
+randomness = 0.2
+process_material = SubResource("ParticleProcessMaterial_trail")
 
 [node name="FlowArrow" type="Line2D" parent="World/Path/BlockFollow"]
 points = PackedVector2Array(0, 0, 33, 0, 24, -9, 33, 0, 24, 9)
