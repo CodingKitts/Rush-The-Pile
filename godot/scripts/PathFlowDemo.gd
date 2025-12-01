@@ -22,6 +22,18 @@ extends Node2D
 @onready var _music_slider: HSlider = $UI/PauseOverlay/Panel/VBox/MusicRow/MusicSlider
 @onready var _sfx_slider: HSlider = $UI/PauseOverlay/Panel/VBox/SfxRow/SfxSlider
 @onready var _audio: AudioManager = $Audio
+@onready var _green_line: ColorRect = $UI/OneThirdLine
+
+# Runtime-added debug label to show last swipe direction
+var _swipe_debug_label: Label
+
+# Simple swipe tracking
+var _swipe_active: bool = false
+var _swipe_start_pos: Vector2 = Vector2.INF
+var _swipe_start_id: int = -1
+const SWIPE_MIN_DISTANCE := 60.0 # pixels
+const SWIPE_MAX_DURATION := 1.0 # seconds (optional soft cap)
+var _swipe_start_time: float = 0.0
 
 var _attempts_max: int = 5
 var _attempts_left: int = 5
@@ -75,16 +87,34 @@ func _ready() -> void:
 		if not _path.curve.changed.is_connected(_on_curve_changed):
 			_path.curve.changed.connect(_on_curve_changed)
 
+	# Add a small on-screen debug label for swipe direction (bottom center)
+	_swipe_debug_label = Label.new()
+	_swipe_debug_label.name = "SwipeDebugLabel"
+	_swipe_debug_label.text = "Swipe: (none)"
+	_swipe_debug_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_swipe_debug_label.vertical_alignment = VERTICAL_ALIGNMENT_BOTTOM
+	_swipe_debug_label.add_theme_color_override("font_color", Color(0.85, 0.95, 1.0))
+	_swipe_debug_label.add_theme_color_override("font_outline_color", Color.BLACK)
+	_swipe_debug_label.add_theme_constant_override("outline_size", 2)
+	_swipe_debug_label.add_theme_font_size_override("font_size", 18)
+	# Place within the UI canvas so it remains in screen space
+	var ui := $UI
+	if ui and ui is CanvasLayer:
+		ui.add_child(_swipe_debug_label)
+		# Center bottom margins
+		_swipe_debug_label.position = Vector2(get_viewport_rect().size.x * 0.5 - 60, get_viewport_rect().size.y - 28)
+		# Update position on resize
+		get_viewport().size_changed.connect(func():
+			_swipe_debug_label.position = Vector2(get_viewport_rect().size.x * 0.5 - 60, get_viewport_rect().size.y - 28)
+		)
+
 func _on_quit_pressed() -> void:
 	# Close the application when Quit button is pressed
 	get_tree().quit()
 
 
-func _unhandled_input(event: InputEvent) -> void:
-	# Allow physical keyboard/gamepad input to trigger the same action as the Up Arrow button
-	if _attempts_left <= 0:
-		return
-	# Allow ESC/BACK to toggle pause/resume
+func _input(event: InputEvent) -> void:
+	# Handle pause/resume hotkey even if UI consumes input
 	if event.is_action_pressed("ui_cancel") and not event.is_echo():
 		if get_tree().paused:
 			_on_resume_pressed()
@@ -92,6 +122,44 @@ func _unhandled_input(event: InputEvent) -> void:
 			_on_pause_pressed()
 		get_viewport().set_input_as_handled()
 		return
+
+	# Touch-based swipe handling (processed early so UI controls won't block it)
+	if event is InputEventScreenTouch:
+		if event.pressed:
+			# Start tracking on press if below green line
+			var pos: Vector2 = event.position
+			if _is_pos_below_green_line(pos) and not _swipe_active:
+				_swipe_active = true
+				_swipe_start_pos = pos
+				_swipe_start_id = event.index
+				_swipe_start_time = Time.get_unix_time_from_system()
+		else:
+			# Release: if we're tracking this finger, evaluate swipe
+			if _swipe_active and event.index == _swipe_start_id:
+				_process_swipe_end(event.position)
+				_reset_swipe()
+		return
+
+	# Mouse-based swipe handling (desktop)
+	if event is InputEventMouseButton:
+		if event.button_index == MOUSE_BUTTON_LEFT:
+			if event.pressed:
+				var mpos: Vector2 = event.position
+				if _is_pos_below_green_line(mpos) and not _swipe_active:
+					_swipe_active = true
+					_swipe_start_pos = mpos
+					_swipe_start_id = 0
+					_swipe_start_time = Time.get_unix_time_from_system()
+			else:
+				if _swipe_active and _swipe_start_id == 0:
+					_process_swipe_end(event.position)
+					_reset_swipe()
+			return
+
+	# The following actions should respect remaining attempts
+	if _attempts_left <= 0:
+		return
+
 	if event is InputEventKey and event.pressed and not event.echo:
 		# Keyboard Up Arrow
 		if event.keycode == Key.KEY_UP:
@@ -109,6 +177,51 @@ func _refresh_attempts_label() -> void:
 	# Visually disable the Up Arrow when out of attempts
 	if _btn_arrow_up:
 		_btn_arrow_up.disabled = _attempts_left <= 0
+
+func _is_pos_below_green_line(pos: Vector2) -> bool:
+	if _green_line == null:
+		return true # if line missing, don't block for safety
+	# For a 1-2px ColorRect line, top is effectively the line. Compare against its global Y.
+	var line_y := _green_line.global_position.y
+	return pos.y >= line_y
+
+func _process_swipe_end(end_pos: Vector2) -> void:
+	# Start must be inside the swipe detection zone (below the green line)
+	if not _is_pos_below_green_line(_swipe_start_pos):
+		return
+	var delta := end_pos - _swipe_start_pos
+	if delta.length() < SWIPE_MIN_DISTANCE:
+		return
+	# Determine if it's an upward swipe (vertical-dominant and moving up)
+	var vertical_dominant := absf(delta.y) >= absf(delta.x)
+	var is_up_swipe := vertical_dominant and delta.y < 0.0
+	# If it's not an upward swipe, still require the end to be inside the zone
+	if not is_up_swipe and not _is_pos_below_green_line(end_pos):
+		return
+	# Optionally check duration
+	var _dur: float = max(0.0, Time.get_unix_time_from_system() - _swipe_start_time)
+	# Determine primary direction for feedback
+	var dir_text := ""
+	if absf(delta.x) > absf(delta.y):
+		if delta.x > 0.0:
+			dir_text = "Right"
+		else:
+			dir_text = "Left"
+	else:
+		if delta.y > 0.0:
+			dir_text = "Down"
+		else:
+			dir_text = "Up"
+	# Debug output to console and on-screen
+	print("Swipe:", dir_text)
+	if _swipe_debug_label:
+		_swipe_debug_label.text = "Swipe: %s" % dir_text
+
+func _reset_swipe() -> void:
+	_swipe_active = false
+	_swipe_start_pos = Vector2.INF
+	_swipe_start_id = -1
+	_swipe_start_time = 0.0
 
 func _on_curve_changed() -> void:
 	_position_popup_at_path_center()
